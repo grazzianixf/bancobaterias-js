@@ -1,0 +1,207 @@
+<html>
+    <head>
+        <script src="js/table.js"></script>
+        <script src="js/inputs.js"></script>
+        <script src="js/math.js"></script>
+        <script src="js/BancoBateria.js"></script>
+    </head>
+    <body>
+        <script>
+            const DIAS_DEFAULT = 1;
+            const QTD_DEFAULT = 1;
+            const HORAS_DEFAULT = 1;
+        </script>
+        <table>
+            <tr>
+                <td>Perda inversor (%):</td>
+                <td>
+                    <input type="number" min="0" max="100" id="txtPerdaInversor" />
+                </td>
+            </tr>
+            <tr>
+                <td>Perda bateria (%):</td>
+                <td>
+                    <input type="number" min="0" max="100" id="txtPerdaBateria" />
+                </td>
+            </tr> 
+            <tr>
+                <td>Max. descarga bateria (%):</td>
+                <td>
+                    <input type="number" min="0" max="100" id="txtMaxDescargaBateria" />
+                </td>
+            </tr>                        
+        </table>
+        <br>
+        <table id="tbEquipamentos" style="border: 1px solid;" width="100%">
+            <thead>
+                <tr>
+                    <td colspan="4" align="center">
+                        EQUIPAMENTOS
+                    </td>
+                </tr>
+                <tr>
+                    <td>Desc. Equipamento</td>
+                    <td>Potência</td>
+                    <td>Qtd</td>
+                    <td>Horas por dia</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="4" align="center">
+                        <br>
+                        <button 
+                            onclick="addRow('tbEquipamentos', 
+                                    [ 
+                                        getText(`desc_${this.parentElement.parentElement.parentElement.children.length-1}`), 
+                                        getText(`pot_${this.parentElement.parentElement.parentElement.children.length-1}`), 
+                                        getText(`qtd_${this.parentElement.parentElement.parentElement.children.length-1}`, QTD_DEFAULT),
+                                        getText(`horas_${this.parentElement.parentElement.parentElement.children.length-1}`, HORAS_DEFAULT),
+                                    ], 
+                                    this.parentElement.parentElement)">
+                            +
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        <table width="100%">
+            <tr>
+                <td align="right">Qtd. dias:</td>
+                <td align="left">
+                    <input type="number" min="1" id="txtQtdDias">
+                </td>
+            </tr>                     
+            <tr>
+                <td align="right">Tensão:</td>
+                <td align="left">
+                    <select id="optTensao" >
+                        <option value="12" selected>12V</option>
+                        <option value="24">24V</option>
+                    </select>
+                </td>
+            </tr>   
+            <tr>
+                <td align="right">Capacidade bateria utilizada (Ah):</td>
+                <td align="left">
+                    <input type="number" min="1" id="txtCapacidadeBateriaUtilizada" value="1">
+                </td>
+            </tr>                                              
+            <tr>
+                <td colspan="2" align="center">
+                    <br>
+                    <button
+                        onclick="calcular()">
+                        Calcular
+                    </button>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table>
+            <tr>
+                <td align="right">Energia consumida diariamente (Wh/dia):</td>
+                <td align="left">
+                    <input type="number" id="txtEnergiaConsumidaDiariamente" disabled>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">Energia armazenada no banco de baterias (Wh):</td>
+                <td align="left">
+                    <input type="number" id="txtEnergiaArmazenadaBancoBaterias" disabled>
+                </td>
+            </tr>  
+            <tr>
+                <td align="right">Capacidade do banco de baterias (Ah):</td>
+                <td align="left">
+                    <input type="number" id="txtCapacidadeBancoBaterias" disabled>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">Baterias:</td>
+                <td align="left">
+                    <input type="text" id="txtDescricaoBaterias" disabled size="100">
+                </td>
+            </tr>      
+            <tr>
+                <td colspan="2">
+                    <fieldset>
+                        <legend>Resultado corrigido:</legend>
+                        <pre id="preResultadoCorrigido"></pre>
+                    </fieldset>
+                </td>
+            </tr>                              
+        </table>
+        <script>
+            // declaracoes
+            let txtEnergiaConsumidaDiariamente = document.getElementById("txtEnergiaConsumidaDiariamente");
+            let body = document.getElementById("tbEquipamentos").getElementsByTagName("tbody")[0];
+            let txtPerdaInversor = document.getElementById("txtPerdaInversor");
+            let txtPerdaBateria = document.getElementById("txtPerdaBateria");
+            let txtMaxDescargaBateria = document.getElementById("txtMaxDescargaBateria");
+            let txtEnergiaArmazenadaBancoBaterias = document.getElementById("txtEnergiaArmazenadaBancoBaterias");
+            let txtQtdDias = document.getElementById("txtQtdDias");
+            let optTensao = document.getElementById("optTensao");
+            let txtCapacidadeBancoBaterias = document.getElementById('txtCapacidadeBancoBaterias');
+            let txtCapacidadeBateriaUtilizada = document.getElementById('txtCapacidadeBateriaUtilizada');
+            let txtDescricaoBaterias = document.getElementById('txtDescricaoBaterias');
+            let preResultadoCorrigido = document.getElementById('preResultadoCorrigido');
+
+            // inicializando valores
+            txtPerdaInversor.value = BancoBateria.PERDA_INVERSOR_DEFAULT;
+            txtPerdaBateria.value = BancoBateria.PERDA_BATERIA_DEFAULT;
+            txtMaxDescargaBateria.value = BancoBateria.MAX_DESCARGA_BATERIA_DEFAULT;
+            txtQtdDias.value = DIAS_DEFAULT;
+            
+            //--
+            function calcular() {
+                let values = getValues() || []
+
+                let bancoBateria = new BancoBateria(values);
+                bancoBateria.txMaxDescargaBateria = txtMaxDescargaBateria.value;
+                bancoBateria.dias = txtQtdDias.value;
+                bancoBateria.tensao = optTensao.value;
+                bancoBateria.capacidadeBateriaUtilizada = txtCapacidadeBateriaUtilizada.value;
+
+                let energiaConsumidaDiariamente = bancoBateria.obterEnergiaConsumidaPeriodo();
+                let energiaArmazenadaBancoBaterias = bancoBateria.obterEnergiaArmazenadaBancoBaterias();
+                let capacidadeBancoBaterias = bancoBateria.obterCapacidadeBancoBaterias();
+                let descricaoBaterias = bancoBateria.obterQuantidadeBaterias().observacao;
+
+                txtEnergiaConsumidaDiariamente.value = energiaConsumidaDiariamente;
+                txtEnergiaArmazenadaBancoBaterias.value = energiaArmazenadaBancoBaterias;
+                txtCapacidadeBancoBaterias.value = capacidadeBancoBaterias;
+                txtDescricaoBaterias.value = descricaoBaterias;
+
+                console.log(bancoBateria.values)
+
+                let resultadoCorrigido = '';
+                bancoBateria.values.forEach(e => {
+                    resultadoCorrigido += `Descrição: ${e.desc}, Tempo (horas) atualizado: ${e.horasAtualizado}.\n`
+                })
+                preResultadoCorrigido.innerHTML = resultadoCorrigido
+            }
+
+            function getValues() {
+                let qtd = body.children.length - 1
+
+                let values = [];
+
+                for (let i = 0; i < qtd; i++) {
+                    let obj = {};
+                    obj.desc = document.getElementById(`desc_${i}`).value;
+                    obj.potencia = document.getElementById(`pot_${i}`).value;
+                    obj.qtd = document.getElementById(`qtd_${i}`).value;
+                    obj.horas = document.getElementById(`horas_${i}`).value;
+
+                    values.push(obj);
+                }
+
+                return values
+
+            }
+
+        </script>
+    </body>
+</html>
