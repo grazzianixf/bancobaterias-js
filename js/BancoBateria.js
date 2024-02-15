@@ -10,6 +10,8 @@ class BancoBateria {
     #txMaxDescargaBateria = BancoBateria.MAX_DESCARGA_BATERIA_DEFAULT;
     #tensao = BancoBateria.TENSAO_DEFAULT;
     #capacidadeBateriaUtilizada = 0;
+    #txAumentoCapacidade = 0;
+    #resultado = {};
 
     constructor(values = [{ potencia: 0, qtd: 0, horas: 0 }]) {
         this.values = values
@@ -62,67 +64,107 @@ class BancoBateria {
     set capacidadeBateriaUtilizada(capacidadeBateriaUtilizada) {
         this.#capacidadeBateriaUtilizada = capacidadeBateriaUtilizada;
     }
+
+    get txAumentoCapacidade() {
+        return this.#txAumentoCapacidade;
+    }
+    
+    #atualizarAumentoCapacidade(txAumentoCapacidade) {
+        this.#txAumentoCapacidade = txAumentoCapacidade;
+    }
+
+    get resultado() {
+        return this.#resultado;
+    }
+    
+    #atualizarResultado(resultado) {
+        this.#resultado = resultado;
+    }
+
+    // get e set calculados
+    #total(fieldName) {
+        return this.values.reduce((acc, e) => acc + e[fieldName], 0);
+    }
+
+    get energiaConsumida() {
+        return this.#total('energiaConsumida');
+    }
+
+    get energiaConsumidaPeriodo() {
+        return this.#total('energiaConsumidaPeriodo');
+    }
+
+    get energiaArmazenadaBancoBaterias() {
+        return this.#total('energiaArmazenadaBancoBaterias');
+    }
+    
+    get energiaArmazenadaBancoBateriasPeriodo() {
+        return this.#total('energiaArmazenadaBancoBateriasPeriodo');
+    }    
+
+    get capacidadeBancoBaterias() {
+        return this.#total('capacidadeBancoBaterias');
+    } 
+    
+    get capacidadeBancoBateriasPeriodo() {
+        return this.#total('capacidadeBancoBateriasPeriodo');
+    }     
+
     
     //--
+    calcularAutonomia() {
+        this.values.forEach(e => {
+            this.atualizarEnergiaConsumida(e);
+            this.atualizarEnergiaArmazenadaBancoBaterias(e);
+            this.atualizarCapacidadeBancoBaterias(e);            
+        });
+
+        this.atualizarQuantidadeBaterias();
+
+        this.values.forEach(e => this.atualizarTempoAutonomia(e));
+    }
 
     obterEnergiaConsumida(potencia, qtd, horas) {
         return potencia * qtd * horas / ( (1-this.txPerdaBateria/100) * (1-this.txPerdaInversor/100))
     }
 
-    obterEnergiaConsumidaPeriodo() {
-        let totalEnergiaConsumidaPeriodo = 0;
-
-        this.values.forEach(e => {
-            let energiaConsumida = this.obterEnergiaConsumida(e.potencia, e.qtd, e.horas) || 0;
-            e.energiaConsumida = energiaConsumida;
-            e.energiaConsumidaPeriodo = energiaConsumida * this.dias;
-
-            totalEnergiaConsumidaPeriodo += e.energiaConsumidaPeriodo;
-        })
-
-        return totalEnergiaConsumidaPeriodo;
+    atualizarEnergiaConsumida(e) {
+        let energiaConsumida = this.obterEnergiaConsumida(e.potencia, e.qtd, e.horas) || 0;
+        e.energiaConsumida = energiaConsumida;
+        e.energiaConsumidaPeriodo = energiaConsumida * this.dias;
     }
 
-    obterEnergiaArmazenadaBancoBaterias() {
-        this.values.forEach(e => {
-            e.energiaArmazenadaBancoBaterias = e.energiaConsumida / (this.txMaxDescargaBateria / 100)
-            e.energiaArmazenadaBancoBateriasPeriodo = e.energiaConsumidaPeriodo / (this.txMaxDescargaBateria / 100)
-        })
-
-        return this.values.reduce((acc, v) => acc + v.energiaArmazenadaBancoBateriasPeriodo, 0)
+    atualizarEnergiaArmazenadaBancoBaterias(e) {
+        e.energiaArmazenadaBancoBaterias = e.energiaConsumida / (this.txMaxDescargaBateria / 100)
+        e.energiaArmazenadaBancoBateriasPeriodo = e.energiaConsumidaPeriodo / (this.txMaxDescargaBateria / 100)
     }
 
-    obterCapacidadeBancoBaterias() {
-        this.values.forEach(e => {
-            e.capacidadeBancoBaterias = e.energiaArmazenadaBancoBaterias / this.tensao;
-            e.capacidadeBancoBateriasPeriodo = e.energiaArmazenadaBancoBateriasPeriodo / this.tensao;
-        })
-
-        return this.values.reduce((acc, e) => acc + e.capacidadeBancoBateriasPeriodo, 0);
+    atualizarCapacidadeBancoBaterias(e) {
+        e.capacidadeBancoBaterias = e.energiaArmazenadaBancoBaterias / this.tensao;
+        e.capacidadeBancoBateriasPeriodo = e.energiaArmazenadaBancoBateriasPeriodo / this.tensao;        
     }
 
-    atualizarHoras(txAumentoCapacidade) {
-        this.values.forEach(e => {
-            e.horasAtualizado = e.horas * txAumentoCapacidade;
-        })
-    }
-
-    obterQuantidadeBaterias() {
-        let capacidadeBancoBaterias = this.obterCapacidadeBancoBaterias();
+    atualizarQuantidadeBaterias() {
+        let capacidadeBancoBaterias = this.capacidadeBancoBateriasPeriodo
         let numeroBrutoBaterias = capacidadeBancoBaterias / this.capacidadeBateriaUtilizada;
         let numeroLiquidoBaterias = nextInteger(numeroBrutoBaterias);
 
         let capacidadeBancoBateriasAtualizado = numeroLiquidoBaterias * this.capacidadeBateriaUtilizada;
-        let txAumentoCapacidade = capacidadeBancoBateriasAtualizado / capacidadeBancoBaterias
 
-        this.atualizarHoras(txAumentoCapacidade);
+        this.#atualizarAumentoCapacidade(capacidadeBancoBateriasAtualizado / capacidadeBancoBaterias);
 
-        return {
+        this.#atualizarResultado({
             numeroBrutoBaterias,
             numeroLiquidoBaterias,
             observacao: `Usando ${nextInteger(numeroBrutoBaterias)} bateria(s) ${this.tensao}V de ${this.capacidadeBateriaUtilizada}Ah o banco de baterias aumenta para ${capacidadeBancoBateriasAtualizado}Ah`
-        };
+        });
     }
+
+    atualizarTempoAutonomia(e) {
+        console.log(e.horas, this.txAumentoCapacidade)
+        e.horasAtualizado = e.horas * this.txAumentoCapacidade;
+    }    
+
 }
 
 

@@ -164,10 +164,12 @@
                 bancoBateria.tensao = optTensao.value;
                 bancoBateria.capacidadeBateriaUtilizada = txtCapacidadeBateriaUtilizada.value;
 
-                let energiaConsumidaDiariamente = bancoBateria.obterEnergiaConsumidaPeriodo();
-                let energiaArmazenadaBancoBaterias = bancoBateria.obterEnergiaArmazenadaBancoBaterias();
-                let capacidadeBancoBaterias = bancoBateria.obterCapacidadeBancoBaterias();
-                let descricaoBaterias = bancoBateria.obterQuantidadeBaterias().observacao;
+                bancoBateria.calcularAutonomia();
+
+                let energiaConsumidaDiariamente = bancoBateria.energiaConsumidaPeriodo;
+                let energiaArmazenadaBancoBaterias = bancoBateria.energiaArmazenadaBancoBateriasPeriodo;
+                let capacidadeBancoBaterias = bancoBateria.capacidadeBancoBateriasPeriodo;
+                let descricaoBaterias = bancoBateria.resultado.observacao;
 
                 txtEnergiaConsumidaDiariamente.value = energiaConsumidaDiariamente;
                 txtEnergiaArmazenadaBancoBaterias.value = energiaArmazenadaBancoBaterias;
