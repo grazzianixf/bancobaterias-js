@@ -108,9 +108,8 @@ class BancoBateria {
     
     get capacidadeBancoBateriasPeriodo() {
         return this.#total('capacidadeBancoBateriasPeriodo');
-    }     
+    }
 
-    
     //--
     calcularAutonomia() {
         this.values.forEach(e => {
@@ -161,7 +160,6 @@ class BancoBateria {
     }
 
     atualizarTempoAutonomia(e) {
-        console.log(e.horas, this.txAumentoCapacidade)
         e.horasAtualizado = e.horas * this.txAumentoCapacidade;
     }    
 
