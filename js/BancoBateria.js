@@ -146,7 +146,7 @@ class BancoBateria {
     atualizarQuantidadeBaterias() {
         let capacidadeBancoBaterias = this.capacidadeBancoBateriasPeriodo
         let numeroBrutoBaterias = capacidadeBancoBaterias / this.capacidadeBateriaUtilizada;
-        let numeroLiquidoBaterias = nextInteger(numeroBrutoBaterias);
+        let numeroLiquidoBaterias = MathCustom.nextInteger(numeroBrutoBaterias);
 
         let capacidadeBancoBateriasAtualizado = numeroLiquidoBaterias * this.capacidadeBateriaUtilizada;
 
@@ -155,7 +155,7 @@ class BancoBateria {
         this.#atualizarResultado({
             numeroBrutoBaterias,
             numeroLiquidoBaterias,
-            observacao: `Usando ${nextInteger(numeroBrutoBaterias)} bateria(s) ${this.tensao}V de ${this.capacidadeBateriaUtilizada}Ah o banco de baterias aumenta para ${capacidadeBancoBateriasAtualizado}Ah`
+            observacao: `Usando ${numeroLiquidoBaterias} bateria(s) ${this.tensao}V de ${this.capacidadeBateriaUtilizada}Ah o banco de baterias aumenta para ${capacidadeBancoBateriasAtualizado}Ah`
         });
     }
 

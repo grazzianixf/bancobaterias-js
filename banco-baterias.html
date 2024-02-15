@@ -2,8 +2,9 @@
     <head>
         <script src="js/table.js"></script>
         <script src="js/inputs.js"></script>
-        <script src="js/math.js"></script>
+        <script src="js/MathCustom.js"></script>
         <script src="js/BancoBateria.js"></script>
+        <script src="js/TimeCustom.js"></script>
     </head>
     <body>
         <script>
@@ -11,6 +12,7 @@
             const QTD_DEFAULT = 1;
             const HORAS_DEFAULT = 1;
             const BATERIA_DEFAULT = 45;
+            const TENSAO_DEFAULT = 12;
         </script>
         <table id="tbValoresDefault">
             <tbody>
@@ -163,6 +165,7 @@
                 txtMaxDescargaBateria.value = BancoBateria.MAX_DESCARGA_BATERIA_DEFAULT;
                 txtQtdDias.value = DIAS_DEFAULT;
                 txtCapacidadeBateriaUtilizada.value = BATERIA_DEFAULT;
+                optTensao.value = TENSAO_DEFAULT;
             }
             
             function calcular() {
@@ -177,9 +180,9 @@
 
                 bancoBateria.calcularAutonomia();
 
-                let energiaConsumidaDiariamente = bancoBateria.energiaConsumidaPeriodo;
-                let energiaArmazenadaBancoBaterias = bancoBateria.energiaArmazenadaBancoBateriasPeriodo;
-                let capacidadeBancoBaterias = bancoBateria.capacidadeBancoBateriasPeriodo;
+                let energiaConsumidaDiariamente = MathCustom.round(bancoBateria.energiaConsumidaPeriodo, 2);
+                let energiaArmazenadaBancoBaterias = MathCustom.round(bancoBateria.energiaArmazenadaBancoBateriasPeriodo, 2);
+                let capacidadeBancoBaterias = MathCustom.round(bancoBateria.capacidadeBancoBateriasPeriodo, 2);
                 let descricaoBaterias = bancoBateria.resultado.observacao;
 
                 txtEnergiaConsumidaDiariamente.value = energiaConsumidaDiariamente;
@@ -191,7 +194,7 @@
 
                 let resultadoCorrigido = '';
                 bancoBateria.values.forEach(e => {
-                    resultadoCorrigido += `Descrição: ${e.descricao}, Tempo (horas) atualizado: ${e.horasAtualizado}.\n`
+                    resultadoCorrigido += `Descrição: ${e.descricao}, Tempo atualizado: ${TimeCustom.integer2TimeString(MathCustom.round(e.horasAtualizado, 2))}.\n`
                 })
                 preResultadoCorrigido.innerHTML = resultadoCorrigido
             }
